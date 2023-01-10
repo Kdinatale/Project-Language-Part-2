@@ -1,0 +1,181 @@
+/* JavaCC file for csc8310 project language */
+// Do not modify the options below.
+options {
+    LOOKAHEAD = 2;
+    STATIC = false;
+    OUTPUT_DIRECTORY = "output";
+    FORCE_LA_CHECK = true;
+}
+
+// Do not change the name of parser/class below.
+PARSER_BEGIN(ProjLangParser)
+
+public class ProjLangParser {
+      // Do not add anything here.
+      // Generated parser code gets inserted here.
+}
+
+PARSER_END(ProjLangParser)
+
+// Add your lexer rules here.
+
+SKIP: 
+{
+	" "
+	| "\t"
+	| "\n"
+	| "\r"
+}
+
+TOKEN:{
+	<IF: "if">
+}
+
+TOKEN:
+{
+	<THEN: "then">
+}
+
+TOKEN: 
+{
+	<ELSE: "else">
+}
+
+TOKEN: 
+{
+	<WHILE: "while">
+}
+
+TOKEN: 
+{
+	<DO: "do">
+}
+
+TOKEN: 
+{
+	<LET: "let">
+}
+
+TOKEN: 
+{
+	<FUN: "fun">
+}
+
+TOKEN: 
+{
+	<VAL: "val">
+}
+
+TOKEN: 
+{
+	<IN: "in">
+}
+
+TOKEN:
+{
+	<END: "end">
+}
+//do I separate these tokens or is this good also is the location good 
+TOKEN: {
+	<TRUE: "true"> 
+	|<FALSE: "false">
+}
+
+TOKEN: 
+{
+	< ID: ["a"-"z", "A"-"Z"] (["a"-"z", "A"-"Z", "0"-"9"])* > 
+}
+
+TOKEN :
+{
+	< NUM: ( ["0"-"9"] )+ >
+}
+
+TOKEN:
+{
+	< ASSIGN: ":=" >
+}
+//binaryops
+//Mulop
+TOKEN: 
+{
+	  < MUL: "*">
+	| < DIV: "/">
+	| < AND: "&" >
+
+}
+//Addop
+TOKEN:
+{
+	  < ADD: "+">
+	| < SUB: "-">
+	| < OR: "|" >
+}
+//Relop
+TOKEN: 
+{
+	  < EQUAL: "=">
+	| <LESS: "<" >
+}
+
+TOKEN: 
+{
+	< NEG : "!" >
+}
+
+TOKEN:
+{
+	< SEMI: ";" >
+}
+
+TOKEN:
+{
+	  < LBRACKET: "{" >
+	| < RBRACKET: "}" >
+}
+
+TOKEN: 
+{
+	  <LPAR: "(" > 
+	| <RPAR: ")" >
+}
+
+// Complete the rule for input() below
+// and add rest of the parser rules
+// following it.
+
+Expr input(): {Expr e1;} {e1 = expr() <SEMI> {return e1;}}// complete the rule and do not change the return type
+
+// Add rest of the parser rules here
+
+Expr expr(): {Expr e1;} {e1 = if_exp() {return e1;}| e1 = letval_exp() {return e1;}| e1 = letfun_exp() {return e1;}| e1 = while_exp() {return e1;}| e1 = seq_exp() {return e1;}| e1 = assn_exp() {return e1;}| e1 = not_exp() {return e1;} | e1 = rel_exp() {return e1;}}
+
+Expr if_exp(): {Expr e1, e2, e3;} {<IF> e1 = expr() <THEN> e2 = expr() <ELSE> e3 = expr() {e1 = new IfExp(e1, e2, e3); return e1;}}
+
+Expr letval_exp(): {Expr e1, e2; String id;} {<LET> <VAL> <ID> {id = token.image;} <EQUAL> e1 = expr() <IN> e2 = expr() <END> {e1 = new LetValExp(id, e1, e2); return e1;}} 
+
+Expr letfun_exp(): {Expr e1, e2; String id, fun;} {<LET> <FUN> <ID> {fun = token.image;} <LPAR> <ID> {id = token.image;} <RPAR> <EQUAL> e1 = expr() <IN> e2 = expr() <END> {e1 = new LetFunExp(fun, id, e1, e2); return e1;}} 
+
+Expr while_exp(): {Expr e1, e2;} {<WHILE> e1 = expr() <DO> e2 = expr() {e1 = new WhileExp(e1, e2); return e1;}}
+
+Expr seq_exp(): {Expr e1, e2;} {<LBRACKET> e1 = expr() (<SEMI> e2 = expr() {e1 = new SeqExp(e1, e2);})* <RBRACKET> {return e1;}}
+
+Expr not_exp(): {Expr e1;} {<NEG> e1 = expr() {e1 = new NotExp(e1); return e1;}}
+
+Expr assn_exp(): {String id; Expr e1;} {<ID> {id = token.image;} <ASSIGN> e1 = expr() {e1 = new AssnExp(id, e1); return e1;}} 
+
+Expr rel_exp(): {Expr e1, e2; String op;} {e1 = arith_exp() ((<EQUAL> {op = token.image;} | <LESS> {op = token.image;}) e2 = arith_exp() {if (op.equals("=")) e1 = new BinExp(BinOp.EQ, e1, e2); else e1 = new BinExp(BinOp.LT, e1, e2);} )? {return e1;} } 
+
+Expr arith_exp(): {Expr e1, e2; String op;} {e1 = term() ((<ADD> {op = token.image;} | <SUB> {op = token.image;} | <OR> {op = token.image;}) e2 = term() {if (op.equals("+")) e1 = new BinExp(BinOp.PLUS, e1, e2); else if (op.equals("-")) e1 = new BinExp(BinOp.MINUS, e1, e2); else e1 = new BinExp(BinOp.OR, e1, e2);})* {return e1;}} 
+
+Expr term(): {Expr e1, e2; String op;} {e1 = factor() ((<MUL> {op = token.image;} | <DIV> {op = token.image;} | <AND> {op = token.image;}) e2 = factor() {if (op.equals("*")) e1 = new BinExp(BinOp.TIMES, e1, e2); else if (op.equals("/")) e1 = new BinExp(BinOp.DIV, e1, e2); else e1 = new BinExp(BinOp.AND, e1, e2);} )* {return e1;}}
+
+Expr factor(): {int i; String s; Expr e1;} 
+{<NUM> {i = Integer.parseInt(token.image); return new IntConst(i);}
+| <TRUE> {return new BoolConst(true);} 
+| <FALSE> {return new BoolConst(false);} 
+| <ID> {s = token.image;} <LPAR> e1 = expr() <RPAR> {e1 = new AppExp(s, e1); return e1;}
+| <ID> {return new VarExp(token.image);}
+| <LPAR> e1 = expr() <RPAR> {return e1;}} 
+
+
